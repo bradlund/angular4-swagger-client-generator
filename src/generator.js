@@ -93,7 +93,7 @@ var Generator = (function () {
                 fs.writeFileSync(outfile, resultWrapper, 'utf-8');
             }
             else {
-                that.LogMessage('Wrapper already exists, skipping', outfile);
+               that.LogMessage('Wrapper already exists, skipping', outfile);
             }
 
 
@@ -171,6 +171,7 @@ var Generator = (function () {
                     summaryLines: summaryLines,
                     isSecure: swagger.security !== undefined || op.security !== undefined,
                     parameters: [],
+                    hasParameters: false,
                     hasJsonResponse: _.some(_.defaults([], swagger.produces, op.produces), function (response) { // TODO PREROBIT
                         return response.indexOf('/json') != -1;
                     })
@@ -197,7 +198,7 @@ var Generator = (function () {
                     }
 
                     parameter.camelCaseName = that.camelCase(parameter.name);
-                    that.LogMessage('parameter ' + parameter.name);
+                    // that.LogMessage('parameter ' + parameter.name);
 
                     // lets also check for a bunch of Java objects!
                     if (parameter.type === 'integer' || parameter.type === 'double' || parameter.type == 'Integer') {
@@ -240,6 +241,7 @@ var Generator = (function () {
                 });
 
                 if (method.parameters.length > 0) {
+                    method.hasParameters = true;
                     method.parameters[method.parameters.length - 1].last = true;
                 }
 

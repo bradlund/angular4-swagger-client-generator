@@ -1,3 +1,4 @@
+/* tslint:disable */
 import { Inject, Injectable, Optional } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
@@ -27,11 +28,16 @@ export class ApiClientService {
   {{#parameters}}
   {{^isSingleton}}* @param {{&camelCaseName}} The {{&description}}{{/isSingleton}}
   {{/parameters}}
+  * @param showLoading boolean value indicating whether the app should show a loading overlay or not for this call
+  * @param loadingWatcher number id indicating which element is watching the service call to display a localized overlay
   * @return The full HTTP response as Observable
   */
-  public {{&methodName}}({{#parameters}}{{&camelCaseName}}: {{typescriptType}}{{^last}}, {{/last}}{{/parameters}}): Observable<HttpResponse<{{&response}}>> {
+  public {{&methodName}}({{#parameters}}{{&camelCaseName}}: {{typescriptType}}{{^last}}, {{/last}}{{/parameters}}{{#hasParameters}}, {{/hasParameters}}showLoading = true, loadingWatcher?: number): Observable<HttpResponse<{{&response}}>> {
     let uri = `{{&backTickPath}}`;
     let headers = new HttpHeaders();
+    if (showLoading) {
+      headers = headers.set('loadingWatcher', (isNaN(loadingWatcher) ? 0 : loadingWatcher) + '');
+    }
     let params = new HttpParams();
     {{#parameters}}
       {{#isQueryParameter}}
