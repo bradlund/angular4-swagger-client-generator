@@ -212,6 +212,8 @@ var Generator = (function () {
                     } else if (parameter.type === 'array') {
                         parameter.typescriptType = that.camelCase(parameter.items['type']) + '[]';
                         parameter.isArray = true;
+                    } else if (!parameter.type) {
+                        parameter.typescriptType = 'any';
                     } else {
                         parameter.typescriptType = that.camelCase(parameter.type);
                     }
@@ -421,7 +423,7 @@ var Generator = (function () {
 
     Generator.prototype.LogMessage = function (text, param) {
         if (this.Debug) {
-            //console.log(text, param || '');
+            console.log(text, param || '');
         }
     };
 
