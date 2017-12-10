@@ -254,7 +254,14 @@ var Generator = (function () {
                             if (_.has(items, '$ref')) {
                                 method.response = that.camelCase(items['$ref'].replace('#/definitions/', '')) + '[]';
                             } else {
-                                method.response = that.camelCase(items['type']) + '[]';
+                                var typescriptType;
+                                if ( items['type'] === 'integer' || items['type'] === 'double') {
+                                    typescriptType = 'number';
+                                }
+                                else {
+                                    typescriptType = that.camelCase(items['type']);
+                                }
+                                method.response = typescriptType + '[]';
                             }
                         } else {
                             method.response = 'any';
@@ -414,7 +421,7 @@ var Generator = (function () {
 
     Generator.prototype.LogMessage = function (text, param) {
         if (this.Debug) {
-            console.log(text, param || '');
+            //console.log(text, param || '');
         }
     };
 
