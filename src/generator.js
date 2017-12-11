@@ -212,6 +212,9 @@ var Generator = (function () {
                     } else if (parameter.type === 'array') {
                         parameter.typescriptType = that.camelCase(parameter.items['type']) + '[]';
                         parameter.isArray = true;
+                    } else if (parameter.schema && parameter.schema.type === 'array') {
+                        parameter.typescriptType = that.camelCase(parameter.schema.items['type']) + '[]';
+                        parameter.isArray = true;
                     } else if (!parameter.type) {
                         parameter.typescriptType = 'any';
                     } else {
