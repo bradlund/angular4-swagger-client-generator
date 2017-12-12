@@ -93,7 +93,7 @@ var Generator = (function () {
                 fs.writeFileSync(outfile, resultWrapper, 'utf-8');
             }
             else {
-               that.LogMessage('Wrapper already exists, skipping', outfile);
+                that.LogMessage('Wrapper already exists, skipping', outfile);
             }
 
 
@@ -135,152 +135,173 @@ var Generator = (function () {
             swagger: swagger,
             domain: (swagger.schemes && swagger.schemes.length > 0 ? swagger.schemes[0] : 'http') + '://' +
             (swagger.host ? swagger.host : 'localhost') + ('/' === swagger.basePath ? '' : swagger.basePath),
-            methods: [],
+            tags: [],
             definitions: []
         };
 
-        _.forEach(swagger.paths, function (api, path) {
-            var globalParams = [];
-            debugger;
-            _.forEach(api, function (op, m) {
-                if (m.toLowerCase() === 'parameters') {
-                    globalParams = op;
-                }
+        // first get a list of all of the tags (which represent controllers in the backend).
+        _.forEach(swagger.tags, function (tag) {
+            var tagCameLcase = tag.name.replace(/\-[a-z]/g, function (t) {
+                return t[1].toUpperCase();
             });
 
-            _.forEach(api, function (op, m) {
-                if (authorizedMethods.indexOf(m.toUpperCase()) === -1) {
-                    return;
-                }
+            data.tags.push({
+                tag: tag.name,
+                name: tagCameLcase,
+                methods: []
+            });
+        });
 
-                // The description line is optional in the spec
-                var summaryLines = [];
-                if (op.description) {
-                    summaryLines = op.description.split('\n');
-                    summaryLines.splice(summaryLines.length - 1, 1);
-                }
+        // a little inefficient to for loop twice, but On^2 isn't TOO horrible at the scale of parsing a swagger file.
+        _.forEach(data.tags, function (tag) {
+            _.forEach(swagger.paths, function (api, path) {
+                var globalParams = [];
+                _.forEach(api, function (op, m) {
+                    if (m.toLowerCase() === 'parameters') {
+                        globalParams = op;
+                    }
+                });
 
-                var method = {
-                    path: path,
-                    backTickPath: path.replace(/(\{.*?\})/g, '$$$1'),
-                    methodName: op['x-swagger-js-method-name'] ? op['x-swagger-js-method-name'] : (op.operationId ? op.operationId : that.getPathToMethodName(m, path)),
-                    method: m.toUpperCase(),
-                    angular2httpMethod: m.toLowerCase(),
-                    isGET: m.toUpperCase() === 'GET',
-                    hasPayload: !_.includes(['GET', 'DELETE', 'HEAD'], m.toUpperCase()),
-                    summaryLines: summaryLines,
-                    isSecure: swagger.security !== undefined || op.security !== undefined,
-                    parameters: [],
-                    hasParameters: false,
-                    hasJsonResponse: _.some(_.defaults([], swagger.produces, op.produces), function (response) { // TODO PREROBIT
-                        return response.indexOf('/json') != -1;
-                    })
-                };
-
-                var params = [];
-
-                if (_.isArray(op.parameters)) {
-                    params = op.parameters;
-                }
-
-                params = params.concat(globalParams);
-
-                // Index file!
-                _.forEach(params, function (parameter) {
-                    // Ignore headers which are injected by proxies & app servers
-                    // eg: https://cloud.google.com/appengine/docs/go/requests#Go_Request_headers
-                    if (parameter['x-proxy-header'] && !data.isNode) {
+                _.forEach(api, function (op, m) {
+                    if (authorizedMethods.indexOf(m.toUpperCase()) === -1) {
                         return;
                     }
 
-                    if (_.has(parameter, 'schema') && _.isString(parameter.schema.$ref)) {
-                        parameter.type = that.camelCase(that.getRefType(parameter.schema.$ref));
+                    var opTag = (op.tags && op.tags.length > 0) ? op.tags[0] : '';
+                    if ( opTag !== tag.tag ) {
+                        return;
                     }
 
-                    parameter.camelCaseName = that.camelCase(parameter.name);
-                    // that.LogMessage('parameter ' + parameter.name);
-
-                    // lets also check for a bunch of Java objects!
-                    if (parameter.type === 'integer' || parameter.type === 'double' || parameter.type == 'Integer') {
-                        parameter.typescriptType = 'number';
-                    } else if (parameter.type == 'String') {
-                        parameter.typescriptType = 'string';
-                    } else if (parameter.type == 'Boolean') {
-                        parameter.typescriptType = 'boolean';
-                    } else if (parameter.type === 'object') {
-                        parameter.typescriptType = 'any';
-                    } else if (parameter.type === 'array') {
-                        parameter.typescriptType = that.camelCase(parameter.items['type']) + '[]';
-                        parameter.isArray = true;
-                    } else if (parameter.schema && parameter.schema.type === 'array') {
-                        parameter.typescriptType = that.camelCase(parameter.schema.items['type']) + '[]';
-                        parameter.isArray = true;
-                    } else if (!parameter.type) {
-                        parameter.typescriptType = 'any';
-                    } else {
-                        parameter.typescriptType = that.camelCase(parameter.type);
+                    // The description line is optional in the spec
+                    var summaryLines = [];
+                    if (op.description) {
+                        summaryLines = op.description.split('\n');
+                        summaryLines.splice(summaryLines.length - 1, 1);
                     }
 
-                    if (parameter.enum && parameter.enum.length === 1) {
-                        parameter.isSingleton = true;
-                        parameter.singleton = parameter.enum[0];
+                    var method = {
+                        path: path,
+                        backTickPath: path.replace(/(\{.*?\})/g, '$$$1'),
+                        //methodName: op['x-swagger-js-method-name'] ? op['x-swagger-js-method-name'] : (op.operationId ? op.operationId : that.getPathToMethodName(m, path)),
+                        methodName: op['x-swagger-js-method-name'] ? op['x-swagger-js-method-name'] : (op.summary ? op.summary : that.getPathToMethodName(m, path)),
+                        method: m.toUpperCase(),
+                        angular2httpMethod: m.toLowerCase(),
+                        isGET: m.toUpperCase() === 'GET',
+                        hasPayload: !_.includes(['GET', 'DELETE', 'HEAD'], m.toUpperCase()),
+                        summaryLines: summaryLines,
+                        isSecure: swagger.security !== undefined || op.security !== undefined,
+                        parameters: [],
+                        hasParameters: false,
+                        hasJsonResponse: _.some(_.defaults([], swagger.produces, op.produces), function (response) { // TODO PREROBIT
+                            return response.indexOf('/json') != -1;
+                        })
+                    };
+
+                    var params = [];
+
+                    if (_.isArray(op.parameters)) {
+                        params = op.parameters;
                     }
 
-                    if (parameter.in === 'body') {
-                        parameter.isBodyParameter = true;
-                        method.hasBodyParameters = true;
-                    } else if (parameter.in === 'path') {
-                        parameter.isPathParameter = true;
-                    } else if (parameter.in === 'query' || parameter.in === 'modelbinding') {
-                        parameter.isQueryParameter = true;
-                        if (parameter['x-name-pattern']) {
-                            parameter.isPatternType = true;
+                    params = params.concat(globalParams);
+
+                    // Index file!
+                    _.forEach(params, function (parameter) {
+                        // Ignore headers which are injected by proxies & app servers
+                        // eg: https://cloud.google.com/appengine/docs/go/requests#Go_Request_headers
+                        if (parameter['x-proxy-header'] && !data.isNode) {
+                            return;
                         }
-                    } else if (parameter.in === 'header') {
-                        parameter.isHeaderParameter = true;
-                    } else if (parameter.in === 'formData') {
-                        parameter.isFormParameter = true;
+
+                        if (_.has(parameter, 'schema') && _.isString(parameter.schema.$ref)) {
+                            parameter.type = that.camelCase(that.getRefType(parameter.schema.$ref));
+                        }
+
+                        parameter.camelCaseName = that.camelCase(parameter.name);
+                        // that.LogMessage('parameter ' + parameter.name);
+
+                        // lets also check for a bunch of Java objects!
+                        if (parameter.type === 'integer' || parameter.type === 'double' || parameter.type == 'Integer') {
+                            parameter.typescriptType = 'number';
+                        } else if (parameter.type == 'String') {
+                            parameter.typescriptType = 'string';
+                        } else if (parameter.type == 'Boolean') {
+                            parameter.typescriptType = 'boolean';
+                        } else if (parameter.type === 'object') {
+                            parameter.typescriptType = 'any';
+                        } else if (parameter.type === 'array') {
+                            parameter.typescriptType = that.camelCase(parameter.items['type']) + '[]';
+                            parameter.isArray = true;
+                        } else if (parameter.schema && parameter.schema.type === 'array') {
+                            parameter.typescriptType = that.camelCase(parameter.schema.items['type']) + '[]';
+                            parameter.isArray = true;
+                        } else if (!parameter.type) {
+                            parameter.typescriptType = 'any';
+                        } else {
+                            parameter.typescriptType = that.camelCase(parameter.type);
+                        }
+
+                        if (parameter.enum && parameter.enum.length === 1) {
+                            parameter.isSingleton = true;
+                            parameter.singleton = parameter.enum[0];
+                        }
+
+                        if (parameter.in === 'body') {
+                            parameter.isBodyParameter = true;
+                            method.hasBodyParameters = true;
+                        } else if (parameter.in === 'path') {
+                            parameter.isPathParameter = true;
+                        } else if (parameter.in === 'query' || parameter.in === 'modelbinding') {
+                            parameter.isQueryParameter = true;
+                            if (parameter['x-name-pattern']) {
+                                parameter.isPatternType = true;
+                            }
+                        } else if (parameter.in === 'header') {
+                            parameter.isHeaderParameter = true;
+                        } else if (parameter.in === 'formData') {
+                            parameter.isFormParameter = true;
+                        }
+
+                        method.parameters.push(parameter);
+                    });
+
+                    if (method.parameters.length > 0) {
+                        method.hasParameters = true;
+                        method.parameters[method.parameters.length - 1].last = true;
                     }
 
-                    method.parameters.push(parameter);
-                });
+                    if (op.responses['200'] != undefined) {
+                        var responseSchema = op.responses['200'].schema;
 
-                if (method.parameters.length > 0) {
-                    method.hasParameters = true;
-                    method.parameters[method.parameters.length - 1].last = true;
-                }
-
-                if (op.responses['200'] != undefined) {
-                    var responseSchema = op.responses['200'].schema;
-
-                    if (_.has(responseSchema, 'type')) {
-                        if (responseSchema['type'] === 'array') {
-                            var items = responseSchema.items;
-                            if (_.has(items, '$ref')) {
-                                method.response = that.camelCase(items['$ref'].replace('#/definitions/', '')) + '[]';
+                        if (_.has(responseSchema, 'type')) {
+                            if (responseSchema['type'] === 'array') {
+                                var items = responseSchema.items;
+                                if (_.has(items, '$ref')) {
+                                    method.response = that.camelCase(items['$ref'].replace('#/definitions/', '')) + '[]';
+                                } else {
+                                    var typescriptType;
+                                    if (items['type'] === 'integer' || items['type'] === 'double') {
+                                        typescriptType = 'number';
+                                    }
+                                    else {
+                                        typescriptType = that.camelCase(items['type']);
+                                    }
+                                    method.response = typescriptType + '[]';
+                                }
                             } else {
-                                var typescriptType;
-                                if ( items['type'] === 'integer' || items['type'] === 'double') {
-                                    typescriptType = 'number';
-                                }
-                                else {
-                                    typescriptType = that.camelCase(items['type']);
-                                }
-                                method.response = typescriptType + '[]';
+                                method.response = 'any';
                             }
+                        } else if (_.has(responseSchema, '$ref')) {
+                            method.response = that.camelCase(responseSchema['$ref'].replace('#/definitions/', ''));
                         } else {
                             method.response = 'any';
                         }
-                    } else if (_.has(responseSchema, '$ref')) {
-                        method.response = that.camelCase(responseSchema['$ref'].replace('#/definitions/', ''));
-                    } else {
+                    } else { // check non-200 response codes
                         method.response = 'any';
                     }
-                } else { // check non-200 response codes
-                    method.response = 'any';
-                }
 
-                data.methods.push(method);
+                    tag.methods.push(method);
+                });
             });
         });
 
