@@ -350,8 +350,11 @@ var Generator = (function () {
                 } else if (property.type === 'object') {
                     property.typescriptType = 'any';
                 } else if (property.name.slice(-2) === 'Yn') {
-                    // custom - oracle doesn't have boolean types, so our variable naming convention is to have booleans
+                    // app-custom logic - oracle doesn't have boolean types, so our variable naming convention is to have booleans
                     // end in Yn.  (activeYn, roleAssignedYn, etc).
+                    property.typescriptType = 'boolean';
+                } else if (['allowUpdate', 'allowDelete', 'allowInsert'].indexOf(property.name) >= 0) {
+                    // app-custom logic. we have a couple properties that are persisted as strings, but the UI treats them as booleans.
                     property.typescriptType = 'boolean';
                 } else {
                     property.typescriptType = property.type;
