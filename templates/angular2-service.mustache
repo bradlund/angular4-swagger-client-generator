@@ -40,7 +40,7 @@ export class ApiClientService {
             let uri = `{{&backTickPath}}`;
             let headers = new HttpHeaders();
             if (showLoading) {
-            headers = headers.set('loadingWatcher', (isNaN(loadingWatcher) ? 0 : loadingWatcher) + '');
+                headers = headers.set('loadingWatcher', (isNaN(loadingWatcher) ? 0 : loadingWatcher) + '');
             }
             let params = new HttpParams();
             {{#parameters}}
@@ -57,7 +57,7 @@ export class ApiClientService {
                             });
                         {{/isPatternType}}
                         {{^isPatternType}}
-                            if ({{&camelCaseName}}) {
+                            if (typeof {{&camelCaseName}} !== 'undefined' && {{&camelCaseName}} !== null) {
                             {{#isArray}}
                                 Object.keys({{&camelCaseName}}).map(value => {
                                 params = params.set('{{&name}}', value + '');
