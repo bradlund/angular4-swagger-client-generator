@@ -88,7 +88,7 @@ export class ApiClientService {
                     {{/isSingleton}}
                 {{/isHeaderParameter}}
             {{/parameters}}
-            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}JSON.stringify({{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}){{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}});
+            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}JSON.stringify({{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}){{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}}).share();
         },
 
     {{/methods}}
