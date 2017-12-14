@@ -87,7 +87,7 @@ var Generator = (function () {
 
             // only write the wrapper file if it doesn't already exist
             outfile = outputdir + '/' + definition.name.toLowerCase() + '.model.ts';
-            if (true || !fs.existsSync(outfile)) {
+            if (!fs.existsSync(outfile)) {
                 var resultWrapper = that.renderLintAndBeautify(that.templates.model, definition, that.templates);
                 that.LogMessage('Wrapper does not exist, Creating file', outfile);
                 fs.writeFileSync(outfile, resultWrapper, 'utf-8');
