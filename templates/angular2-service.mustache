@@ -1,7 +1,8 @@
 /* tslint:disable */
 import { Inject, Injectable, Optional } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs/Observable';
+import {Observable} from 'rxjs/index';
+import {share} from 'rxjs/operators';
 import {WebmsgService} from '../app/core/webmsg/webmsg.service';
 
 import { {{#definitions}}{{name}}{{^last}}, {{/last}}{{/definitions}} } from './models';
@@ -84,7 +85,7 @@ export class ApiClientService {
                     {{/isSingleton}}
                 {{/isHeaderParameter}}
             {{/parameters}}
-            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}{{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}{{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}}).share();
+            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}{{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}{{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}}).pipe(share());
         },
 
     {{/methods}}
