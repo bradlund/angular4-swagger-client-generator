@@ -168,7 +168,7 @@ var Generator = (function () {
                     }
 
                     var opTag = (op.tags && op.tags.length > 0) ? op.tags[0] : '';
-                    if ( opTag !== tag.tag ) {
+                    if (opTag !== tag.tag) {
                         return;
                     }
 
@@ -233,7 +233,8 @@ var Generator = (function () {
                             parameter.typescriptType = that.camelCase(parameter.items['type']) + '[]';
                             parameter.isArray = true;
                         } else if (parameter.schema && parameter.schema.type === 'array') {
-                            parameter.typescriptType = that.camelCase(parameter.schema.items['type']) + '[]';
+                            var typeName = parameter.schema.items['type'] || parameter.schema.items['$ref'].replace('#/definitions/', '');
+                            parameter.typescriptType = that.camelCase(typeName) + '[]';
                             parameter.isArray = true;
                         } else if (!parameter.type) {
                             parameter.typescriptType = 'any';
