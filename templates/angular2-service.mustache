@@ -27,13 +27,14 @@ export class ApiClientService {
         {{/summaryLines}}
         * Method {{&methodName}}
         {{#parameters}}
-            {{^isSingleton}}* @param {{&camelCaseName}} The {{&description}}{{/isSingleton}}
+        {{^isSingleton}}* @param {{&camelCaseName}} The {{&description}}{{/isSingleton}}
         {{/parameters}}
         * @param showLoading boolean value indicating whether the app should show a loading overlay or not for this call
         * @param loadingWatcher number id indicating which element is watching the service call to display a localized overlay
+        * @param skipWebMsg boolean defaulted to false, if true the framework will not attempt to process anything that looks like a web message
         * @return The full HTTP response as Observable
         */
-        {{&methodName}}: ({{#parameters}}{{&camelCaseName}}: {{typescriptType}}{{^last}}, {{/last}}{{/parameters}}{{#hasParameters}}, {{/hasParameters}}showLoading = true, loadingWatcher?: number): Observable<HttpResponse<{{&response}}>> => {
+        {{&methodName}}: ({{#parameters}}{{&camelCaseName}}: {{typescriptType}}{{^last}}, {{/last}}{{/parameters}}{{#hasParameters}}, {{/hasParameters}}showLoading = true, loadingWatcher?: number, skipWebMsg:boolean = false): Observable<HttpResponse<{{&response}}>> => {
             let uri = `{{&backTickPath}}`;
             let headers = new HttpHeaders();
             if (showLoading) {
@@ -85,14 +86,14 @@ export class ApiClientService {
                     {{/isSingleton}}
                 {{/isHeaderParameter}}
             {{/parameters}}
-            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}{{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}{{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}}).pipe(share());
+            return this.sendRequest<{{&response}}>('{{angular2httpMethod}}', uri, headers, params, {{#hasBodyParameters}}{{#parameters}}{{#isBodyParameter}}{{&camelCaseName}}{{/isBodyParameter}}{{/parameters}}{{/hasBodyParameters}}{{^hasBodyParameters}}null{{/hasBodyParameters}}, skipWebMsg).pipe(share());
         },
 
     {{/methods}}
     };
 {{/tags}}
 
-  private sendRequest<T>(method:string, uri:string, headers:HttpHeaders, params:HttpParams, body:any):Observable<HttpResponse<T>> {
-    return this.webMsgService.createWebMsgObservable(method, uri, headers, params, body);
+  private sendRequest<T>(method:string, uri:string, headers:HttpHeaders, params:HttpParams, body:any, skipWebMsg:boolean = false):Observable<HttpResponse<T>> {
+    return this.webMsgService.createWebMsgObservable(method, uri, headers, params, body, skipWebMsg);
   }
 }
