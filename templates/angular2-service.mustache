@@ -96,4 +96,8 @@ export class ApiClientService {
   private sendRequest<T>(method:string, uri:string, headers:HttpHeaders, params:HttpParams, body:any, skipWebMsg:boolean = false):Observable<HttpResponse<T>> {
     return this.webMsgService.createWebMsgObservable(method, uri, headers, params, body, skipWebMsg);
   }
+
+  private safeUri(value:number | string):string {
+    return encodeURIComponent(value as any);
+  }
 }

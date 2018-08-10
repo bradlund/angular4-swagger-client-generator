@@ -181,7 +181,7 @@ var Generator = (function () {
 
                     var method = {
                         path: path,
-                        backTickPath: path.replace(/(\{.*?\})/g, '$$$1'),
+                        backTickPath: path.replace(/(\{.*?\})/g, '$$$1').replace(/\$\{/g, '${this.safeUri(').replace(/\}/g, ')}'),
                         //methodName: op['x-swagger-js-method-name'] ? op['x-swagger-js-method-name'] : (op.operationId ? op.operationId : that.getPathToMethodName(m, path)),
                         methodName: op['x-swagger-js-method-name'] ? op['x-swagger-js-method-name'] : (op.summary ? op.summary : that.getPathToMethodName(m, path)),
                         method: m.toUpperCase(),
